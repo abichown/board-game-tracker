@@ -34,7 +34,7 @@ model Game {
 
 model Session {
   id        String   @id @default(cuid())
-  date      DateTime
+  date      DateTime @default(now())
   winner    String?
   gameId    String
   game      Game     @relation(fields: [gameId], references: [id])

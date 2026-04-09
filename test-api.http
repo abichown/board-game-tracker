@@ -1,8 +1,3 @@
-POST http://localhost:3000/api/games
-Content-Type: application/json
+GET http://localhost:3000/api/sessions?userId=1
+Accept: application/json
 
-{
-  "name": "Catan",
-  "ownerId": "1",
-  "source": "gift"
-}
