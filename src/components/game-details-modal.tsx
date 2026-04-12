@@ -1,18 +1,14 @@
 "use client";
 
-import { UserGame } from "@/generated/prisma/browser";
 import { useEffect } from "react";
 import type { UserGameUI } from "@/types/user-game";
 
-type GameDetailsModalProps = {
+type Props = {
   game: UserGameUI | null;
   onClose: () => void;
 };
 
-export default function GameDetailsModal({
-  game,
-  onClose,
-}: GameDetailsModalProps) {
+export default function GameDetailsDrawer({ game, onClose }: Props) {
   useEffect(() => {
     if (!game) return;
 
@@ -26,76 +22,73 @@ export default function GameDetailsModal({
 
   if (!game) return null;
 
-  const formatDate = (date?: string | Date | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString();
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex">
       {/* Overlay */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+      {/* Drawer */}
+      <div className="relative ml-auto h-full w-full max-w-md bg-slate-900 text-slate-100 shadow-2xl p-6 animate-slide-in">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <h2 className="text-xl font-semibold">{game.boardGame.name}</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold">{game.boardGame.name}</h2>
 
-          <button onClick={onClose} className="text-gray-500 hover:text-black">
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
             ✕
           </button>
         </div>
 
-        {/* Collection Info */}
-        <div className="mt-5 space-y-2">
-          <h3 className="text-sm font-semibold text-gray-600">Collection</h3>
+        {/* Collection */}
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 mb-2">
+            Collection
+          </h3>
 
-          <div className="text-sm text-gray-800 space-y-1">
+          <div className="text-sm space-y-1">
             <p>
-              <span className="font-medium">Source:</span> {game.source ?? "—"}
+              <span className="text-slate-400">Source:</span>{" "}
+              {game.source ?? "—"}
             </p>
             <p>
-              <span className="font-medium">Acquired:</span>{" "}
-              {formatDate(game.acquiredAt)}
+              <span className="text-slate-400">Acquired:</span>{" "}
+              {game.acquiredAt
+                ? new Date(game.acquiredAt).toLocaleDateString()
+                : "—"}
             </p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="mt-5 space-y-2">
-          <h3 className="text-sm font-semibold text-gray-600">Stats</h3>
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 mb-2">
+            Stats
+          </h3>
 
-          <div className="text-sm text-gray-800 space-y-1">
+          <div className="text-sm space-y-1">
             <p>
-              <span className="font-medium">Plays:</span> {game.plays ?? 0}
+              <span className="text-slate-400">Plays:</span>{" "}
+              {game.plays ?? game.sessions.length}
             </p>
             <p>
-              <span className="font-medium">Last played:</span>{" "}
-              {formatDate(game.lastPlayedAt)}
+              <span className="text-slate-400">Last played:</span>{" "}
+              {game.lastPlayedAt
+                ? new Date(game.lastPlayedAt).toLocaleDateString()
+                : "Never"}
             </p>
           </div>
         </div>
 
-        {/* Rating (UI placeholder) */}
-        <div className="mt-5">
-          <h3 className="text-sm font-semibold text-gray-600">Rating</h3>
+        {/* Rating placeholder */}
+        <div>
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 mb-2">
+            Rating
+          </h3>
 
-          <div className="mt-1 flex gap-1 text-gray-300">
+          <div className="flex gap-1 text-slate-600">
             {Array.from({ length: 5 }).map((_, i) => (
               <span key={i}>★</span>
             ))}
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200"
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>
