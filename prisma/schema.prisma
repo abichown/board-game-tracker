@@ -76,6 +76,7 @@ model BoardGame {
   average       Float?
   usersRated    Int?
   isExpansion   Boolean?
+  imageUrl      String?
 
   userGames     UserGame[]
 }
