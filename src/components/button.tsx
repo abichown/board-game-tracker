@@ -27,7 +27,7 @@ export default function Button({
 
         padding: "10px 14px",
         borderRadius: 8,
-        border: "none",
+        border: variant === "primary" ? "none" : "1px solid #e2e8f0",
 
         cursor: isDisabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.6 : 1,

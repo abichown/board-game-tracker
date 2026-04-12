@@ -5,6 +5,8 @@ import Card from "@/components/card";
 import Button from "@/components/button";
 import PageHeader from "@/components/page-header";
 import { useToast } from "@/components/toast/toast-provider";
+import GameDetailsModal from "@/components/game-details-modal";
+import type { UserGameUI } from "@/types/user-game";
 
 const headingStyle = {
   fontFamily: "var(--font-geist-sans)",
@@ -53,9 +55,10 @@ const textStyle = {
 };
 
 export default function UserGamesPage() {
-  const [games, setGames] = useState<UserGame[]>([]);
+  const [games, setGames] = useState<UserGameUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingGameId, setLoadingGameId] = useState<string | null>(null);
+  const [selectedGame, setSelectedGame] = useState<UserGameUI | null>(null);
 
   const { showToast } = useToast();
 
@@ -157,7 +160,7 @@ export default function UserGamesPage() {
                     {lastPlayed ? lastPlayed.toLocaleDateString() : "Never"}
                   </div>
 
-                  {game.source && (
+                  {/* {game.source && (
                     <>
                       <div style={labelStyle}>Source</div>
                       <div style={valueStyle}>{game.source}</div>
@@ -171,12 +174,27 @@ export default function UserGamesPage() {
                         {new Date(game.acquiredAt).toLocaleDateString()}
                       </div>
                     </>
-                  )}
+                  )} */}
                 </div>
 
                 <div style={{ flexGrow: 1 }} />
 
-                <div style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <Button
+                    onClick={() =>
+                      setSelectedGame({
+                        ...game,
+                        plays: totalPlays,
+                        lastPlayedAt: lastPlayed
+                          ? lastPlayed.toISOString()
+                          : null,
+                      })
+                    }
+                    variant="secondary"
+                  >
+                    View details
+                  </Button>
+
                   <Button
                     onClick={() => logSession(game.id)}
                     isLoading={isLoading}
@@ -189,6 +207,11 @@ export default function UserGamesPage() {
           );
         })}
       </div>
+
+      <GameDetailsModal
+        game={selectedGame}
+        onClose={() => setSelectedGame(null)}
+      />
     </div>
   );
 }
