@@ -5,7 +5,7 @@ import Card from "@/components/card";
 import Button from "@/components/button";
 import PageHeader from "@/components/page-header";
 import { useToast } from "@/components/toast/toast-provider";
-import GameDetailsModal from "@/components/game-details-modal";
+import GameDetailsDrawer from "@/components/game-details-drawer";
 import type { UserGameUI } from "@/types/user-game";
 
 const headingStyle = {
@@ -208,7 +208,7 @@ export default function UserGamesPage() {
         })}
       </div>
 
-      <GameDetailsModal
+      <GameDetailsDrawer
         game={selectedGame}
         onClose={() => setSelectedGame(null)}
       />
