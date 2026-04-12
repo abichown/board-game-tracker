@@ -83,6 +83,7 @@ export async function GET(req: NextRequest) {
       where: { userId },
       include: {
         boardGame: true,
+        sessions: true,
       },
       orderBy: {
         createdAt: "desc",
