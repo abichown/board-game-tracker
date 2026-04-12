@@ -8,40 +8,56 @@ const prisma = new PrismaClient({ adapter });
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { gameId, userId, winner, date, players } = body;
+    const { userId, gameId, players, date } = body;
 
-    if (!gameId || !userId || !players) {
+    if (!userId || !gameId || !players || !Array.isArray(players)) {
       return NextResponse.json(
-        { error: "Missing required fields: gameId, userId, players" },
+        {
+          error:
+            "Missing required fields: userId, gameId, players (array of player objects with name and isWinner)",
+        },
         { status: 400 },
       );
     }
 
-    // Convert date or default to now
+    if (players.length === 0) {
+      return NextResponse.json(
+        { error: "players array must contain at least one player" },
+        { status: 400 },
+      );
+    }
+
     const sessionDate = date ? new Date(date) : new Date();
 
-    // Create session AND update lastPlayed in one transaction
-    const [session, updatedGame] = await prisma.$transaction([
-      prisma.session.create({
-        data: {
-          gameId,
-          userId,
-          winner,
-          date: sessionDate,
-          players,
+    // Create session and session players in a transaction
+    const session = await prisma.session.create({
+      data: {
+        userId,
+        gameId,
+        date: sessionDate,
+        players: {
+          create: players.map(
+            (player: { name: string; isWinner?: boolean }) => ({
+              name: player.name,
+              isWinner: player.isWinner ?? false,
+            }),
+          ),
         },
-      }),
-      prisma.game.update({
-        where: { id: gameId },
-        data: { lastPlayed: sessionDate },
-      }),
-    ]);
+      },
+      include: { players: true },
+    });
 
-    return NextResponse.json(session);
-  } catch (err) {
-    console.error("Prisma error:", err);
+    // Update lastPlayedAt in UserGame
+    await prisma.userGame.updateMany({
+      where: { userId, gameId },
+      data: { lastPlayedAt: sessionDate },
+    });
+
+    return NextResponse.json(session, { status: 201 });
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
-      { error: (err as Error).message },
+      { error: (error as Error).message || "Failed to create session." },
       { status: 500 },
     );
   }
@@ -50,21 +66,31 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const userId = req.nextUrl.searchParams.get("userId");
+    const gameId = req.nextUrl.searchParams.get("gameId");
+
     if (!userId) {
-      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required query parameter: userId" },
+        { status: 400 },
+      );
+    }
+
+    const where: { userId: string; gameId?: string } = { userId };
+    if (gameId) {
+      where.gameId = gameId;
     }
 
     const sessions = await prisma.session.findMany({
-      where: { userId },
-      include: { game: true },
+      where,
+      include: { game: true, players: true },
       orderBy: { date: "desc" },
     });
 
     return NextResponse.json(sessions);
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
-      { error: (err as Error).message },
+      { error: (error as Error).message || "Failed to fetch sessions." },
       { status: 500 },
     );
   }

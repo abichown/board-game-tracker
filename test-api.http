@@ -1,3 +1,0 @@
-GET http://localhost:3000/api/sessions?userId=1
-Accept: application/json
-

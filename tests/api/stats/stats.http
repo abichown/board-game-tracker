@@ -1,0 +1,11 @@
+### Test 1: Get stats for user (after logging sessions)
+GET http://localhost:3000/api/stats?userId=1
+Accept: application/json
+
+### Test 2: Get stats for user with no sessions (should return empty stats)
+GET http://localhost:3000/api/stats?userId=2
+Accept: application/json
+
+### Test 3: Missing userId (should fail with 400)
+GET http://localhost:3000/api/stats
+Accept: application/json

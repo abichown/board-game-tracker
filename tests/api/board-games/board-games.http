@@ -1,0 +1,14 @@
+### Search board games (basic match)
+GET http://localhost:3000/api/board-games?query=catan
+
+
+### Search partial match
+GET http://localhost:3000/api/board-games?query=terra
+
+
+### Search case-insensitive test
+GET http://localhost:3000/api/board-games?query=pandemic
+
+
+### Empty query (should return empty results)
+GET http://localhost:3000/api/board-games?query=

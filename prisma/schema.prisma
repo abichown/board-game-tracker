@@ -12,33 +12,74 @@ datasource db {
   provider = "postgresql"
 }
 
+enum GameRelationship {
+  OWNED
+  PLAYED_ELSEWHERE
+  WISHLIST
+}
+
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
+  id        String     @id @default(uuid())
+  email     String     @unique
   name      String?
-  createdAt DateTime  @default(now())
+  createdAt DateTime   @default(now())
+  userGames UserGame[]
   sessions  Session[]
-  games     Game[]
 }
 
 model Game {
-  id          String   @id @default(cuid())
-  name        String
-  lastPlayed  DateTime?
-  acquiredAt  DateTime?
-  source      String?   // e.g., gift, Kickstarter, second-hand
-  ownerId     String
-  owner       User      @relation(fields: [ownerId], references: [id])
-  sessions    Session[]
+  id         String     @id
+  name       String
+  imageUrl   String?
+  minPlayers Int?
+  maxPlayers Int?
+  playTime   Int?
+  userGames  UserGame[]
+  sessions   Session[]
+}
+
+model UserGame {
+  id            String          @id @default(uuid())
+  userId        String
+  gameId        String
+  relationship  GameRelationship
+  lastPlayedAt  DateTime?
+  source        String?         // e.g. gift, Kickstarter, second-hand
+  acquiredAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([userId, gameId])
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  date      DateTime @default(now())
-  winner    String?
+  id        String          @id @default(uuid())
+  userId    String
   gameId    String
-  game      Game     @relation(fields: [gameId], references: [id])
-  userId    String   // NEW: links session to a user
-  user      User     @relation(fields: [userId], references: [id]) // NEW
-  players   String[] // array of player names
+  date      DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id])
+  game      Game            @relation(fields: [gameId], references: [id])
+  players   SessionPlayer[]
+}
+
+model SessionPlayer {
+  id        String   @id @default(uuid())
+  sessionId String
+  name      String
+  isWinner  Boolean  @default(false)
+  session   Session  @relation(fields: [sessionId], references: [id])
+}
+
+model BoardGame {
+  id                Int     @id
+  name              String
+  yearPublished     Int?
+  rank              Int?
+  bayesAverage      Float?
+  average           Float?
+  usersRated        Int?
+  isExpansion       Boolean?
+
+  createdAt         DateTime @default(now())
 }

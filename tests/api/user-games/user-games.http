@@ -1,0 +1,77 @@
+### Test 1: Create a new game and add to user library
+POST http://localhost:3000/api/user-games
+Content-Type: application/json
+
+{
+  "userId": "1",
+  "gameId": "1",
+  "relationship": "OWNED",
+  "source": "Kickstarter",
+  "game": {
+    "name": "Catan",
+    "imageUrl": "https://images.unsplash.com/photo-1570303228200-61b3c5f6e4d9",
+    "minPlayers": 4,
+    "maxPlayers": 4,
+    "playTime": 90
+  }
+}
+
+### Test 2: Add same game to another user's library
+POST http://localhost:3000/api/user-games
+Content-Type: application/json
+
+{
+  "userId": "2",
+  "gameId": "1",
+  "relationship": "PLAYED_ELSEWHERE"
+}
+
+### Test 3: Add a different game for the same user
+POST http://localhost:3000/api/user-games
+Content-Type: application/json
+
+{
+  "userId": "test-user-1",
+  "gameId": "ticket-to-ride-001",
+  "relationship": "WISHLIST",
+  "game": {
+    "name": "Ticket to Ride",
+    "imageUrl": "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937",
+    "minPlayers": 2,
+    "maxPlayers": 5,
+    "playTime": 60
+  }
+}
+
+### Test 4: Try to add duplicate (should fail with 409)
+POST http://localhost:3000/api/user-games
+Content-Type: application/json
+
+{
+  "userId": "test-user-1",
+  "gameId": "catan-001",
+  "relationship": "OWNED"
+}
+
+### Test 5: Missing required field (should fail with 400)
+POST http://localhost:3000/api/user-games
+Content-Type: application/json
+
+{
+  "userId": "1",
+  "gameId": "missing-relationship"
+}
+
+### Test 6: Invalid relationship (should fail with 400)
+POST http://localhost:3000/api/user-games
+Content-Type: application/json
+
+{
+  "userId": "1",
+  "gameId": "invalid-game",
+  "relationship": "INVALID_TYPE"
+}
+
+### Test 7: Get all games in user's library
+GET http://localhost:3000/api/user-games?userId=1
+Accept: application/json
