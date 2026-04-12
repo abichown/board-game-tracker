@@ -1,68 +1,32 @@
-### Test 1: Create a session with multiple players
+### Create session (basic)
 POST http://localhost:3000/api/sessions
 Content-Type: application/json
 
 {
   "userId": "1",
-  "gameId": "1",
+  "userGameId": "1",
   "players": [
-    { "name": "Alice", "isWinner": true },
-    { "name": "Bob", "isWinner": false },
-    { "name": "Charlie", "isWinner": false }
-  ],
-  "date": "2026-04-09T19:00:00.000Z"
-}
-
-### Test 2: Create another session for the same game
-POST http://localhost:3000/api/sessions
-Content-Type: application/json
-
-{
-  "userId": "1",
-  "gameId": "1",
-  "players": [
-    { "name": "Alice", "isWinner": false },
-    { "name": "Bob", "isWinner": true }
-  ],
-  "date": "2026-04-08T20:30:00.000Z"
-}
-
-### Test 3: Get all sessions for user
-GET http://localhost:3000/api/sessions?userId=1
-Accept: application/json
-
-### Test 4: Get sessions filtered by game
-GET http://localhost:3000/api/sessions?userId=1&gameId=1
-Accept: application/json
-
-### Test 5: Create session without isWinner (defaults to false)
-POST http://localhost:3000/api/sessions
-Content-Type: application/json
-
-{
-  "userId": "1",
-  "gameId": "1",
-  "players": [
-    { "name": "David" },
-    { "name": "Eve" }
+    { "name": "Abi", "isWinner": true },
+    { "name": "Michael", "isWinner": false }
   ]
 }
 
-### Test 6: Missing players field (should fail with 400)
+### Create session (with custom date)
 POST http://localhost:3000/api/sessions
 Content-Type: application/json
 
 {
   "userId": "1",
-  "gameId": "1"
+  "userGameId": "709408eb-7c17-40a3-9227-25b97d6f7ce8",
+  "date": "2026-04-10T19:00:00.000Z",
+  "players": [
+    { "name": "Abi" },
+    { "name": "Michael", "isWinner": true }
+  ]
 }
 
-### Test 7: Empty players array (should fail with 400)
-POST http://localhost:3000/api/sessions
-Content-Type: application/json
+### Get all sessions for user
+GET http://localhost:3000/api/sessions?userId=1
 
-{
-  "userId": "1",
-  "gameId": "1",
-  "players": []
-}
+### Get sessions for a specific game
+GET http://localhost:3000/api/sessions?userId=1&userGameId=1

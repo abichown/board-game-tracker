@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../../generated/prisma/client";
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import prisma from "../../../lib/prisma";
 
 const validRelationships = ["OWNED", "PLAYED_ELSEWHERE", "WISHLIST"] as const;
 
 type Relationship = (typeof validRelationships)[number];
 
+//
+// ======================
+// POST - Add user game
+// ======================
+//
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const {
-      userId,
-      gameId,
-      relationship,
-      lastPlayedAt,
-      source,
-      acquiredAt,
-      game,
-    } = body;
 
-    if (!userId || !gameId || !relationship) {
+    const { userId, boardGameId, relationship, source, acquiredAt } = body;
+
+    if (!userId || !boardGameId || !relationship) {
       return NextResponse.json(
-        { error: "Missing required fields: userId, gameId, relationship" },
+        { error: "Missing required fields: userId, boardGameId, relationship" },
         { status: 400 },
       );
     }
@@ -32,46 +26,22 @@ export async function POST(req: NextRequest) {
     if (!validRelationships.includes(relationship)) {
       return NextResponse.json(
         {
-          error:
-            "relationship must be one of OWNED, PLAYED_ELSEWHERE, WISHLIST",
+          error: "relationship must be OWNED, PLAYED_ELSEWHERE, or WISHLIST",
         },
         { status: 400 },
       );
     }
 
-    let existingGame = await prisma.game.findUnique({ where: { id: gameId } });
-
-    if (!existingGame) {
-      if (!game?.name) {
-        return NextResponse.json(
-          {
-            error:
-              "Game not found in database. Include game.name to create a new Game record.",
-          },
-          { status: 400 },
-        );
-      }
-
-      existingGame = await prisma.game.create({
-        data: {
-          id: gameId,
-          name: game.name,
-          imageUrl: game.imageUrl,
-          minPlayers: game.minPlayers,
-          maxPlayers: game.maxPlayers,
-          playTime: game.playTime,
-        },
-      });
-    }
-
     const userGame = await prisma.userGame.create({
       data: {
         userId,
-        gameId,
+        boardGameId: Number(boardGameId),
         relationship: relationship as Relationship,
-        lastPlayedAt: lastPlayedAt ? new Date(lastPlayedAt) : undefined,
         source,
-        acquiredAt: acquiredAt ? new Date(acquiredAt) : undefined,
+        acquiredAt: acquiredAt ? new Date(acquiredAt) : null,
+      },
+      include: {
+        boardGame: true,
       },
     });
 
@@ -87,12 +57,17 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: (error as Error).message || "Failed to add game to library." },
+      { error: "Failed to add game to library." },
       { status: 500 },
     );
   }
 }
 
+//
+// ======================
+// GET - Fetch user games
+// ======================
+//
 export async function GET(req: NextRequest) {
   try {
     const userId = req.nextUrl.searchParams.get("userId");
@@ -106,15 +81,20 @@ export async function GET(req: NextRequest) {
 
     const userGames = await prisma.userGame.findMany({
       where: { userId },
-      include: { game: true },
-      orderBy: { lastPlayedAt: "desc" },
+      include: {
+        boardGame: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
     return NextResponse.json(userGames);
   } catch (error) {
     console.error(error);
+
     return NextResponse.json(
-      { error: (error as Error).message || "Failed to fetch user games." },
+      { error: "Failed to fetch user games." },
       { status: 500 },
     );
   }

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../../generated/prisma/client";
+import prisma from "../../../lib/prisma";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
-
+//
+// ======================
+// POST - Create session
+// ======================
+//
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, gameId, players, date } = body;
+    const { userId, userGameId, players, date } = body;
 
-    if (!userId || !gameId || !players || !Array.isArray(players)) {
+    if (!userId || !userGameId || !players || !Array.isArray(players)) {
       return NextResponse.json(
         {
-          error:
-            "Missing required fields: userId, gameId, players (array of player objects with name and isWinner)",
+          error: "Missing required fields: userId, userGameId, players (array)",
         },
         { status: 400 },
       );
@@ -29,11 +29,10 @@ export async function POST(req: NextRequest) {
 
     const sessionDate = date ? new Date(date) : new Date();
 
-    // Create session and session players in a transaction
     const session = await prisma.session.create({
       data: {
         userId,
-        gameId,
+        userGameId,
         date: sessionDate,
         players: {
           create: players.map(
@@ -44,29 +43,36 @@ export async function POST(req: NextRequest) {
           ),
         },
       },
-      include: { players: true },
-    });
-
-    // Update lastPlayedAt in UserGame
-    await prisma.userGame.updateMany({
-      where: { userId, gameId },
-      data: { lastPlayedAt: sessionDate },
+      include: {
+        userGame: {
+          include: {
+            boardGame: true,
+          },
+        },
+        players: true,
+      },
     });
 
     return NextResponse.json(session, { status: 201 });
   } catch (error) {
     console.error(error);
+
     return NextResponse.json(
-      { error: (error as Error).message || "Failed to create session." },
+      { error: "Failed to create session." },
       { status: 500 },
     );
   }
 }
 
+//
+// ======================
+// GET - Fetch sessions
+// ======================
+//
 export async function GET(req: NextRequest) {
   try {
     const userId = req.nextUrl.searchParams.get("userId");
-    const gameId = req.nextUrl.searchParams.get("gameId");
+    const userGameId = req.nextUrl.searchParams.get("userGameId");
 
     if (!userId) {
       return NextResponse.json(
@@ -75,22 +81,31 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const where: { userId: string; gameId?: string } = { userId };
-    if (gameId) {
-      where.gameId = gameId;
+    const where: { userId: string; userGameId?: string } = { userId };
+
+    if (userGameId) {
+      where.userGameId = userGameId;
     }
 
     const sessions = await prisma.session.findMany({
       where,
-      include: { game: true, players: true },
+      include: {
+        userGame: {
+          include: {
+            boardGame: true,
+          },
+        },
+        players: true,
+      },
       orderBy: { date: "desc" },
     });
 
     return NextResponse.json(sessions);
   } catch (error) {
     console.error(error);
+
     return NextResponse.json(
-      { error: (error as Error).message || "Failed to fetch sessions." },
+      { error: "Failed to fetch sessions." },
       { status: 500 },
     );
   }

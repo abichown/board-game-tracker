@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../../generated/prisma/client";
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import prisma from "../../../lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +15,14 @@ export async function GET(req: NextRequest) {
     // Get all sessions for this user
     const sessions = await prisma.session.findMany({
       where: { userId },
-      include: { game: true, players: true },
+      include: {
+        userGame: {
+          include: {
+            boardGame: true,
+          },
+        },
+        players: true,
+      },
     });
 
     if (sessions.length === 0) {
@@ -33,13 +36,16 @@ export async function GET(req: NextRequest) {
 
     // Aggregate plays per game
     const totalPlaysPerGame: Record<string, number> = {};
+
     sessions.forEach((session) => {
-      const gameName = session.game.name;
+      const gameName = session.userGame.boardGame.name;
+
       totalPlaysPerGame[gameName] = (totalPlaysPerGame[gameName] || 0) + 1;
     });
 
     // Aggregate wins per player
     const winsPerPlayer: Record<string, number> = {};
+
     sessions.forEach((session) => {
       session.players.forEach((player) => {
         if (player.isWinner) {
@@ -48,7 +54,7 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // Calculate win percentage per player (if they've played)
+    // Player stats
     const playerStats: Record<
       string,
       { wins: number; plays: number; winPercentage: number }
@@ -57,18 +63,25 @@ export async function GET(req: NextRequest) {
     sessions.forEach((session) => {
       session.players.forEach((player) => {
         if (!playerStats[player.name]) {
-          playerStats[player.name] = { wins: 0, plays: 0, winPercentage: 0 };
+          playerStats[player.name] = {
+            wins: 0,
+            plays: 0,
+            winPercentage: 0,
+          };
         }
+
         playerStats[player.name].plays += 1;
+
         if (player.isWinner) {
           playerStats[player.name].wins += 1;
         }
       });
     });
 
-    // Calculate win percentages
+    // Calculate win %
     Object.keys(playerStats).forEach((playerName) => {
       const stats = playerStats[playerName];
+
       stats.winPercentage =
         stats.plays > 0 ? Math.round((stats.wins / stats.plays) * 100) : 0;
     });
@@ -82,8 +95,9 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error(error);
+
     return NextResponse.json(
-      { error: (error as Error).message || "Failed to fetch stats." },
+      { error: "Failed to fetch stats." },
       { status: 500 },
     );
   }

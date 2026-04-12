@@ -27,40 +27,36 @@ model User {
   sessions  Session[]
 }
 
-model Game {
-  id         String     @id
-  name       String
-  imageUrl   String?
-  minPlayers Int?
-  maxPlayers Int?
-  playTime   Int?
-  userGames  UserGame[]
-  sessions   Session[]
-}
-
 model UserGame {
-  id            String          @id @default(uuid())
+  id            String        @id @default(uuid())
   userId        String
-  gameId        String
+  user          User          @relation(fields: [userId], references: [id])
+
+  boardGameId   Int
+  boardGame     BoardGame     @relation(fields: [boardGameId], references: [id])
+
   relationship  GameRelationship
-  lastPlayedAt  DateTime?
-  source        String?         // e.g. gift, Kickstarter, second-hand
+  source        String?
   acquiredAt    DateTime?
 
-  user User @relation(fields: [userId], references: [id])
-  game Game @relation(fields: [gameId], references: [id])
+  createdAt     DateTime      @default(now())
 
-  @@unique([userId, gameId])
+  sessions      Session[]
+
+  @@unique([userId, boardGameId])
 }
 
 model Session {
-  id        String          @id @default(uuid())
-  userId    String
-  gameId    String
-  date      DateTime        @default(now())
-  user      User            @relation(fields: [userId], references: [id])
-  game      Game            @relation(fields: [gameId], references: [id])
-  players   SessionPlayer[]
+  id           String      @id @default(uuid())
+  userId       String
+  userGameId   String
+
+  date         DateTime    @default(now())
+
+  user         User        @relation(fields: [userId], references: [id])
+  userGame     UserGame    @relation(fields: [userGameId], references: [id])
+
+  players      SessionPlayer[]
 }
 
 model SessionPlayer {
@@ -72,14 +68,14 @@ model SessionPlayer {
 }
 
 model BoardGame {
-  id                Int     @id
-  name              String
-  yearPublished     Int?
-  rank              Int?
-  bayesAverage      Float?
-  average           Float?
-  usersRated        Int?
-  isExpansion       Boolean?
+  id            Int          @id
+  name          String
+  yearPublished Int?
+  rank          Int?
+  bayesAverage  Float?
+  average       Float?
+  usersRated    Int?
+  isExpansion   Boolean?
 
-  createdAt         DateTime @default(now())
+  userGames     UserGame[]
 }
